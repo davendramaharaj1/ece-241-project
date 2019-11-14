@@ -1,0 +1,46 @@
+module control(clock, reset, ps2_key_en, keyboardData, xOut, yOut, colour, PLOT_TO_VGA);
+
+	input clock, reset, ps2_key_en;
+	input [7:0] keyboardData;
+	
+	output [7:0] xOut;
+	output [6:0] yOut;
+	output [2:0] colour;
+	output PLOT_TO_VGA;
+	
+	wire Down, Stay, Right, ldX, ldY, ldClr, control_colour_signal,control_colour,reset_to_datapath;
+	
+	controller c1(
+			.clock(clock), 
+			.update(ps2_key_en), 
+			.keyboardCommand(keyboardData), 
+			.Down(Down), 
+			.Stay(Stay),
+			.Right(Right),
+			.plot_en(PLOT_TO_VGA), 
+			.ldX(ldX), 
+			.ldY(ldY), 
+			.ldClr(ldClr), 
+			.reset(reset), 
+			.control_colour_signal(control_colour_signal),
+			.control_colour(control_colour),
+			.reset_to_datapath(reset_to_datapath)
+	);
+	
+	datapath d1(
+		.clock(clock), 
+		.reset_from_controller(reset_to_datapath), 
+		.down(Down), 
+		.stay(Stay),
+		.right(Right), 
+		.xLoc(xOut), 
+		.yLoc(yOut), 
+		.colour(colour), 
+		.ldX(ldX), 
+		.ldY(ldY), 
+		.ldClr(ldClr), 
+		.control_colour_signal(control_colour_signal), 
+		.control_colour(control_colour)
+	);
+	
+endmodule

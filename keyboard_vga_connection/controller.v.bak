@@ -1,0 +1,130 @@
+
+module controller(clock, update, keyBoardCommand, Down, Stay, plot_en, ldX, ldY, ldClr, reset);
+
+/*****************************************************************************
+ *                           Parameter Declarations                          *
+ *****************************************************************************/
+localparam S_INIT_POS		=	4'd0,
+			  S_UPDATE			=	4'd1,
+			  S_CLEAR			=	4'd2,
+			  S_UPDATE_DIR		=	4'd3,
+			  S_UPDATE_POS		=	4'd4,
+			  S_PLOT				=	4'd5;
+		
+/*****************************************************************************
+ *                             Port Declarations                             *
+ *****************************************************************************/
+
+// Inputs
+input	CLOCK_50;
+input	update, reset;
+input [7:0] keyboardCommand;
+
+// Bidirectionals
+
+// Outputs
+output Down, Stay, plot_en, ldX, ldY, ldClr, control_colour_signal;
+output reg reset_to_datapath;
+output reg [2:0] control_colour;
+
+/*****************************************************************************
+ *                 Internal Wires and Registers Declarations                 *
+ *****************************************************************************/
+
+// Internal Wires
+
+// Internal Registers
+reg down;
+reg stay;
+
+// State Machine Registers
+reg [3:0] current_state, next_state;
+
+/*****************************************************************************
+ *                         Finite State Machine(s)                           *
+ *****************************************************************************/
+// Next state logic aka our state table
+    always@(posedge clock)
+    begin : state_table
+		case (current_state)
+			 S_INIT_POS		:		next_state = S_UPDATE;
+			 S_UPDATE		:		next_state = update ? S_CLEAR : S_UPDATE;
+			 S_CLEAR			:		next_state = S_UPDATE_DIR;
+			 S_UPDATE_DIR	:		next_state = S_UPDATE_POS;
+			 S_UPDATE_POS	:		next_state = S_PLOT;
+			 S_PLOT			:		next_state = S_UPDATE;
+			 default			:		next_state = S_INIT_POS;
+		endcase
+	 end // End of State Table
+	 
+	 // Output logic aka all of our datapath control signals
+    always @(*)
+    begin: enable_signals
+        // By default make all our signals 0 to avoid latches.
+        ldX  = 1'b0;
+		  ldY = 1'b0;
+		  ldClr = 1'b0;
+		  plot_en = 1'b0;
+		  reset_to_datapath = 1'b0;
+
+        case (current_state)
+            S_INIT_POS: begin
+                reset_to_datapath = 1'b1;
+					 up = 1'b0;
+					 down = 1'b0;
+                end
+            S_CLEAR: begin
+                plot_en = 1'b1;
+					 control_colour_signal = 1'b0
+					 control_colour = 3'b0;
+                end
+            S_UPDATE_DIR: begin
+                if(keyBoardCommad == 8'h72)
+						down = 1'b1;
+					 else if(keyBoardCommand == 8'h75)
+						down = 1'b0;
+					 else
+						stay = 1'b1;
+					 end
+				S_UPDATE_POS: begin 
+					ldX = 1'b1;
+					ldY = 1'b1;
+					ldClr = 1'b1;
+					end
+            S_PLOT: begin 
+					plot_en = 1'b1;
+					end
+        // default:    // don't need default since we already made sure all of our outputs were assigned a value at the start of the always block
+        endcase
+    end // enable_signals
+
+/*****************************************************************************
+ *                             Sequential Logic                              *
+ *****************************************************************************/
+
+always @(posedge CLOCK_50)
+begin
+	if (KEY[0] == 1'b0)
+		last_data_received <= 8'h00;
+	else if (ps2_key_pressed == 1'b1)
+		last_data_received <= ps2_key_data;
+end
+
+/*****************************************************************************
+ *                            Combinational Logic                            *
+ *****************************************************************************/
+
+assign HEX2 = 7'h7F;
+assign HEX3 = 7'h7F;
+assign HEX4 = 7'h7F;
+assign HEX5 = 7'h7F;
+assign HEX6 = 7'h7F;
+assign HEX7 = 7'h7F;
+
+/*****************************************************************************
+ *                              Internal Modules                             *
+ *****************************************************************************/
+
+
+
+endmodule

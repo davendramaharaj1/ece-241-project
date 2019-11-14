@@ -1,0 +1,58 @@
+module datapath(clock, 
+					reset_from_controller, 
+					down, 
+					stay,
+					right, 
+					xLoc, 
+					yLoc, 
+					colour, 
+					ldX, 
+					ldY, 
+					ldClr, 
+					control_colour_signal, 
+					control_colour);
+
+input clock, reset_from_controller, down, stay, right, ldX, ldY, ldClr, control_colour_signal;
+input [2:0] control_colour;
+
+output [7:0] xLoc;
+output [6:0] yLoc;
+output [2:0] control_colour;
+
+reg [7:0] x;
+reg [6:0] y;
+reg [2:0] clr;
+
+always @(posedge clock)
+	begin
+		if (reset) begin
+			x <= 8'd0;
+			y <= 7'b0;
+			c <= 3'b100;
+		end
+		else begin
+			if (ld_x) begin
+				if (down)
+					x <= x + 1'b1;
+				else
+					x <= x - 1'b1;
+			end
+			if (ld_y) begin
+				if (Down)
+					y <= y + 1'b1;
+				else
+					y <= y - 1'b1;
+			end
+			if (ld_c)
+				c <= C_In;
+		end
+	end
+
+	assign X_Pos = x;
+	assign Y_Pos = y;
+	
+	assign X_Out = x + x_inc;
+	assign Y_Out = y + y_inc;
+	assign C_Out = frc ? frc_c : c;
+
+endmodule
